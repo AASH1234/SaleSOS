@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+
+import argparse
+import requests
+import json
+
+BASE_URL = "http://0.0.0.0:8000"
+
+def create_organization(args):
+    url = f"{BASE_URL}/organizations/"
+    data = {
+        "organization": {"name": args.name},
+        "user": {"email": args.email, "password": args.password, "role": "admin"}
+    }
+    response = requests.post(url, json=data)
+    print(response.status_code)
+    print(response.json())
+
+def login(args):
+    url = f"{BASE_URL}/token"
+    data = {"username": args.email, "password": args.password}
+    response = requests.post(url, data=data)
+    print(response.status_code)
+    print(response.json())
+
+def create_user(args):
+    url = f"{BASE_URL}/users/"
+    headers = {"Authorization": f"Bearer {args.token}"}
+    data = {"email": args.email, "password": args.password, "role": args.role}
+    response = requests.post(url, headers=headers, json=data)
+    print(response.status_code)
+    print(response.json())
+
+def register_user(args):
+    url = f"{BASE_URL}/register/"
+    data = {"email": args.email, "password": args.password, "organization_id": args.org_id}
+    response = requests.post(url, json=data)
+    print(response.status_code)
+    print(response.json())
+
+def create_group(args):
+    url = f"{BASE_URL}/groups/"
+    headers = {"Authorization": f"Bearer {args.token}"}
+    data = {"name": args.name}
+    response = requests.post(url, headers=headers, json=data)
+    print(response.status_code)
+    print(response.json())
+
+def add_user_to_group(args):
+    url = f"{BASE_URL}/groups/{args.group_id}/users/"
+    headers = {"Authorization": f"Bearer {args.token}"}
+    params = {"user_id": args.user_id}
+    response = requests.post(url, headers=headers, params=params)
+    print(response.status_code)
+    print(response.json())
+
+def get_users_in_group(args):
+    url = f"{BASE_URL}/groups/{args.group_id}/users/"
+    headers = {"Authorization": f"Bearer {args.token}"}
+    response = requests.get(url, headers=headers)
+    print(response.status_code)
+    print(response.json())
+
+def main():
+    parser = argparse.ArgumentParser(description="API testing CLI for saleSOS")
+    subparsers = parser.add_subparsers()
+
+    # Create organization
+    parser_create_org = subparsers.add_parser("create-org", help="Create an organization")
+    parser_create_org.add_argument("--name", required=True, help="Organization name")
+    parser_create_org.add_argument("--email", required=True, help="Admin email")
+    parser_create_org.add_argument("--password", required=True, help="Admin password")
+    parser_create_org.set_defaults(func=create_organization)
+
+    # Login
+    parser_login = subparsers.add_parser("login", help="Login to get a token")
+    parser_login.add_argument("--email", required=True, help="User email")
+    parser_login.add_argument("--password", required=True, help="User password")
+    parser_login.set_defaults(func=login)
+
+    # Create user
+    parser_create_user = subparsers.add_parser("create-user", help="Create a user")
+    parser_create_user.add_argument("--token", required=True, help="Auth token")
+    parser_create_user.add_argument("--email", required=True, help="New user email")
+    parser_create_user.add_argument("--password", required=True, help="New user password")
+    parser_create_user.add_argument("--role", required=True, choices=["admin", "manager", "sales"], help="New user role")
+    parser_create_user.set_defaults(func=create_user)
+
+    # Register user
+    parser_register_user = subparsers.add_parser("register-user", help="Register a new user")
+    parser_register_user.add_argument("--email", required=True, help="User email")
+    parser_register_user.add_argument("--password", required=True, help="User password")
+    parser_register_user.add_argument("--org-id", required=True, type=int, help="Organization ID")
+    parser_register_user.set_defaults(func=register_user)
+
+    # Create group
+    parser_create_group = subparsers.add_parser("create-group", help="Create a group")
+    parser_create_group.add_argument("--token", required=True, help="Auth token")
+    parser_create_group.add_argument("--name", required=True, help="Group name")
+    parser_create_group.set_defaults(func=create_group)
+
+    # Add user to group
+    parser_add_user = subparsers.add_parser("add-user-to-group", help="Add a user to a group")
+    parser_add_user.add_argument("--token", required=True, help="Auth token")
+    parser_add_user.add_argument("--group-id", required=True, type=int, help="Group ID")
+    parser_add_user.add_argument("--user-id", required=True, type=int, help="User ID")
+    parser_add_user.set_defaults(func=add_user_to_group)
+
+    # Get users in group
+    parser_get_users = subparsers.add_parser("get-users-in-group", help="Get users in a group")
+    parser_get_users.add_argument("--token", required=True, help="Auth token")
+    parser_get_users.add_argument("--group-id", required=True, type=int, help="Group ID")
+    parser_get_users.set_defaults(func=get_users_in_group)
+
+    args = parser.parse_args()
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,10 @@
+/home/autoinstall/myspace/python_projects/saleSOS/senv/lib64/python3.6/site-packages/jose/backends/cryptography_backend.py:4: CryptographyDeprecationWarning: Python 3.6 is no longer supported by the Python core team. Therefore, support for it is deprecated in cryptography. The next release of cryptography will remove support for Python 3.6.
+  from cryptography.exceptions import InvalidSignature, InvalidTag
+INFO:     Started server process [2306]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     192.168.77.1:55173 - "GET /docs HTTP/1.1" 200 OK
+INFO:     192.168.77.1:55173 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     192.168.77.1:55215 - "GET /docs HTTP/1.1" 200 OK
+INFO:     192.168.77.1:55215 - "GET /openapi.json HTTP/1.1" 200 OK
