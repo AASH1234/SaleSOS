@@ -2,6 +2,8 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List
+from jose import JWTError, jwt
+from datetime import timedelta
 
 from . import auth, crud, models, schemas
 from .database import SessionLocal, engine
@@ -39,6 +41,21 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
+@app.post("/token", response_model=schemas.Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, email=form_data.username)
+    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @app.post("/organizations/", response_model=schemas.Organization)
 def create_organization(organization: schemas.OrganizationCreate, user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_organization = crud.get_organization_by_name(db, name=organization.name)
@@ -52,19 +69,6 @@ def create_organization(organization: schemas.OrganizationCreate, user: schemas.
 def get_all_organizations(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     return crud.get_organizations(db=db)
 
-@app.post("/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = crud.get_user_by_email(db, email=form_data.username)
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token = auth.create_access_token(
-        data={"sub": user.email}
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/groups/", response_model=schemas.Group)
 def create_group(group: schemas.GroupCreate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):

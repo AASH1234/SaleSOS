@@ -5,6 +5,7 @@ import enum
 from .database import Base
 
 class Role(enum.Enum):
+    superadmin = "superadmin"
     admin = "admin"
     manager = "manager"
     executive = "executive"
