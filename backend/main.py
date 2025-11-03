@@ -3,10 +3,10 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List
 from jose import JWTError, jwt
-from datetime import timedelta
+from datetime import timedelta, datetime
 
-from . import auth, crud, models, schemas
-from .database import SessionLocal, engine
+import auth, crud, models, schemas
+from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -54,6 +54,40 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    
+    refresh_token, expires_at = auth.create_refresh_token(data={"sub": user.email})
+    crud.create_refresh_token(db, user_id=user.id, token=refresh_token, expires_at=expires_at)
+    
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+
+@app.post("/token/refresh", response_model=schemas.RefreshTokenResponse)
+async def refresh_access_token(request: schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
+    token = request.refresh_token
+    db_refresh_token = crud.get_refresh_token(db, token=token)
+
+    if not db_refresh_token or db_refresh_token.expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = crud.get_user(db, user_id=db_refresh_token.user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Expire the old refresh token
+    crud.expire_refresh_token(db, token=token)
+
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/organizations/", response_model=schemas.Organization)

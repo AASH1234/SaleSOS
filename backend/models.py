@@ -1,8 +1,9 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum, DateTime
 from sqlalchemy.orm import relationship
 import enum
+import datetime
 
-from .database import Base
+from database import Base
 
 class Role(enum.Enum):
     superadmin = "superadmin"
@@ -28,6 +29,8 @@ class User(Base):
 
     organization = relationship("Organization", back_populates="users")
     groups = relationship("GroupMember", back_populates="user")
+    refresh_tokens = relationship("RefreshToken", back_populates="user")
+
 
 class Group(Base):
     __tablename__ = "groups"
@@ -47,3 +50,13 @@ class GroupMember(Base):
 
     group = relationship("Group", back_populates="members")
     user = relationship("User", back_populates="groups")
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    expires_at = Column(DateTime, nullable=False)
+
+    user = relationship("User", back_populates="refresh_tokens")
