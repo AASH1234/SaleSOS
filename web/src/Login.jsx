@@ -1,21 +1,39 @@
 import { useState } from 'react'
 import './Login.css'
+import { getToken } from './api'
 
 function Login({ onNavigate }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!email || !password) {
       setError('Please enter both email and password')
       return
     }
     setError('')
-    // Demo behaviour: replace with real auth call
-    // eslint-disable-next-line no-alert
-    alert(`Logged in (demo): ${email}`)
+    await CallLoginAPI()
+  }
+
+  async function CallLoginAPI() {
+    try {
+      const response = await getToken({ email, password })
+      if (response.success) {
+        // Handle successful login
+        console.log('Token:', response.token)
+        // Navigate to dashboard or home page
+        if (onNavigate) {
+          onNavigate('dashboard')
+        }
+      } else {
+        setError(response.message || 'Login failed')
+      }
+    } catch (err) {
+      setError('An error occurred while logging in')
+      console.error(err)
+    }
   }
 
   return (
