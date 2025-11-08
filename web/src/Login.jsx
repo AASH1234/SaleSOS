@@ -5,7 +5,7 @@ import { getToken } from './api'
 // Icons as SVG components for better quality
 const AnalyticsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 20V10M18 20V4M6 20v-4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12 20V10M18 20V4M6 20v-4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -86,7 +86,8 @@ function Login({ onNavigate }) {
       setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
-    await CallLoginAPI()
+      await CallLoginAPI()
+    }
   }
 
   async function CallLoginAPI() {
@@ -130,7 +131,7 @@ function Login({ onNavigate }) {
                 <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.2" />
               </linearGradient>
             </defs>
-            
+
             {/* Background Pattern */}
             <path className="wave-1" d="M-100,200 C150,100 350,0 500,100 C650,200 750,100 900,200" fill="none" stroke="url(#wave-gradient)" strokeWidth="2" />
             <path className="wave-2" d="M-100,400 C150,300 350,200 500,300 C650,400 750,300 900,400" fill="none" stroke="url(#wave-gradient)" strokeWidth="2" />
@@ -175,7 +176,7 @@ function Login({ onNavigate }) {
           <div className="orb orb-2"></div>
           <div className="orb orb-3"></div>
           <div className="orb orb-4"></div>
-          
+
           {/* Shimmer Effects */}
           <div className="shimmer shimmer-1"></div>
           <div className="shimmer shimmer-2"></div>
@@ -195,7 +196,7 @@ function Login({ onNavigate }) {
           <p className="hero-subtitle">Transform your sales process with AI-powered insights and seamless collaboration tools</p>
         </div>
         <div className="promotion-features">
-          <div 
+          <div
             className={`feature ${activeFeature === 'analytics' ? 'active' : ''}`}
             onMouseEnter={() => setActiveFeature('analytics')}
             onMouseLeave={() => setActiveFeature(null)}
@@ -208,7 +209,7 @@ function Login({ onNavigate }) {
               <p>Real-time insights and predictive analysis for data-driven decisions</p>
             </div>
           </div>
-          <div 
+          <div
             className={`feature ${activeFeature === 'team' ? 'active' : ''}`}
             onMouseEnter={() => setActiveFeature('team')}
             onMouseLeave={() => setActiveFeature(null)}
@@ -221,7 +222,7 @@ function Login({ onNavigate }) {
               <p>Unified workspace for seamless team coordination and communication</p>
             </div>
           </div>
-          <div 
+          <div
             className={`feature ${activeFeature === 'customer' ? 'active' : ''}`}
             onMouseEnter={() => setActiveFeature('customer')}
             onMouseLeave={() => setActiveFeature(null)}
@@ -242,7 +243,7 @@ function Login({ onNavigate }) {
             <h2>Welcome Back</h2>
             <p className="login-subtitle">Sign in to your account</p>
           </div>
-          
+
           {error && (
             <div className="error">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -338,7 +339,7 @@ function Login({ onNavigate }) {
             </div>
             <button type="button" className="social-btn google">
               <svg width="20" height="20" viewBox="0 0 24 24">
-                <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" fill="currentColor"/>
+                <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" fill="currentColor" />
               </svg>
               Continue with Google
             </button>
@@ -354,7 +355,7 @@ function Login({ onNavigate }) {
               Create account
             </button>
           </div>
-      </form>
+        </form>
       </div>
     </div>
   )
