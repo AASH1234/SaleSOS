@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './Login.css'
+import { getToken } from './api'
 
 // Icons as SVG components for better quality
 const AnalyticsIcon = () => (
@@ -85,6 +86,25 @@ function Login({ onNavigate }) {
       setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
+    await CallLoginAPI()
+  }
+
+  async function CallLoginAPI() {
+    try {
+      const response = await getToken({ email, password })
+      if (response.success) {
+        // Handle successful login
+        console.log('Token:', response.token)
+        // Navigate to dashboard or home page
+        if (onNavigate) {
+          onNavigate('dashboard')
+        }
+      } else {
+        setError(response.message || 'Login failed')
+      }
+    } catch (err) {
+      setError('An error occurred while logging in')
+      console.error(err)
     }
   }
 
