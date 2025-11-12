@@ -16,7 +16,7 @@ def get_user(db: Session, user_id: int):
 
 def create_user(db: Session, user: schemas.UserCreate, organization_id: int, role: models.Role):
     hashed_password = pwd_context.hash(user.password)
-    db_user = models.User(email=user.email, hashed_password=hashed_password, organization_id=organization_id, role=role)
+    db_user = models.User(name=user.name, email=user.email, hashed_password=hashed_password, organization_id=organization_id, role=role)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -65,7 +65,7 @@ def register_user(db: Session, user: schemas.UserRegister):
     organization_id = organization.id
 
     hashed_password = pwd_context.hash(user.password)
-    db_user = models.User(email=user.email, hashed_password=hashed_password, organization_id=organization_id, role=models.Role.executive)
+    db_user = models.User(name=user.name, email=user.email, hashed_password=hashed_password, organization_id=organization_id, role=models.Role.executive)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

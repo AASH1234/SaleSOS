@@ -18,6 +18,7 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 class UserBase(BaseModel):
+    name: str
     email: str
     role: Role
 
@@ -25,6 +26,7 @@ class UserCreate(UserBase):
     password: str
 
 class UserRegister(BaseModel):
+    name: str
     email: str
     password: str
     organization_name: str

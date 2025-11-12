@@ -73,4 +73,21 @@ export const getToken = async (credentials) => {
   }
 };
 
+// Registration API method
+export const register = async (userData) => {
+  try {
+    const response = await apiClient.post('/register/', userData);
+    
+    return {
+      success: true,
+      user: response,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || 'Registration failed',
+    };
+  }
+};
+
 export default apiClient;
