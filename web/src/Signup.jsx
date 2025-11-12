@@ -27,6 +27,7 @@ const ShieldIcon = () => (
 function Signup({ onNavigate }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [organization, setOrganization] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -34,6 +35,7 @@ function Signup({ onNavigate }) {
   const [activeFeature, setActiveFeature] = useState(null)
   const [nameValid, setNameValid] = useState(null)
   const [emailValid, setEmailValid] = useState(null)
+  const [organizationValid, setOrganizationValid] = useState(null)
   const [passwordValid, setPasswordValid] = useState(null)
   const [confirmValid, setConfirmValid] = useState(null)
 
@@ -65,6 +67,17 @@ function Signup({ onNavigate }) {
     }
   }
 
+  // Handle organization change with validation
+  const handleOrganizationChange = (e) => {
+    const value = e.target.value
+    setOrganization(value)
+    if (value) {
+      setOrganizationValid(value.length >= 2)
+    } else {
+      setOrganizationValid(null)
+    }
+  }
+
   // Handle password change with validation
   const handlePasswordChange = (e) => {
     const value = e.target.value
@@ -92,7 +105,7 @@ function Signup({ onNavigate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!name || !email || !password || !confirm) {
+    if (!name || !email || !organization || !password || !confirm) {
       setError('Please fill all fields')
       return
     }
@@ -102,6 +115,10 @@ function Signup({ onNavigate }) {
     }
     if (!emailValid) {
       setError('Please enter a valid email address')
+      return
+    }
+    if (!organizationValid) {
+      setError('Organization must be at least 2 characters')
       return
     }
     if (!passwordValid) {
@@ -120,7 +137,7 @@ function Signup({ onNavigate }) {
     try {
       await new Promise(resolve => setTimeout(resolve, 1500))
       // eslint-disable-next-line no-alert
-      alert(`Account created (demo): ${email}`)
+      alert(`Account created (demo): ${email} - ${organization}`)
       onNavigate && onNavigate('login')
     } catch (err) {
       setError('An error occurred. Please try again.')
@@ -319,6 +336,33 @@ function Signup({ onNavigate }) {
               {emailValid !== null && (
                 <svg className="input-status" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   {emailValid ? (
+                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  ) : (
+                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                  )}
+                </svg>
+              )}
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="organization">Your organization</label>
+            <div className={`input-wrapper ${organizationValid === true ? 'valid' : organizationValid === false ? 'invalid' : ''}`}>
+              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              <input
+                id="organization"
+                type="text"
+                value={organization}
+                onChange={handleOrganizationChange}
+                placeholder="Your organization name"
+                autoComplete="organization"
+              />
+              {organizationValid !== null && (
+                <svg className="input-status" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  {organizationValid ? (
                     <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
                   ) : (
                     <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
