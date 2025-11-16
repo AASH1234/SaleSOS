@@ -58,14 +58,14 @@ def register_user(db: Session, user: schemas.UserRegister):
     if db_user:
         raise ValueError("Email already registered")
 
-    organization = get_organization_by_name(db, name=user.organization_name)
+    organization = get_organization_by_name(db, name=user.organization)
     if not organization:
-        organization = create_organization(db, organization=schemas.OrganizationCreate(name=user.organization_name))
+        organization = create_organization(db, organization=schemas.OrganizationCreate(name=user.organization))
     
     organization_id = organization.id
 
     hashed_password = pwd_context.hash(user.password)
-    db_user = models.User(name=user.name, email=user.email, hashed_password=hashed_password, organization_id=organization_id, role=models.Role.executive)
+    db_user = models.User(name=user.name, email=user.email, hashed_password=hashed_password, organization_id=organization_id, role=models.Role.admin)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

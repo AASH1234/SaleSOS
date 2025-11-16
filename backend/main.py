@@ -64,6 +64,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     
+    # Store access token in database
+    access_token_expires_at = datetime.utcnow() + access_token_expires
+    crud.create_access_token(db, user_id=user.id, token=access_token, expires_at=access_token_expires_at)
+    
     refresh_token, expires_at = auth.create_refresh_token(data={"sub": user.email})
     crud.create_refresh_token(db, user_id=user.id, token=refresh_token, expires_at=expires_at)
     
@@ -96,6 +100,10 @@ async def refresh_access_token(request: schemas.RefreshTokenRequest, db: Session
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    
+    # Store new access token in database
+    access_token_expires_at = datetime.utcnow() + access_token_expires
+    crud.create_access_token(db, user_id=user.id, token=access_token, expires_at=access_token_expires_at)
 
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -164,8 +172,16 @@ def create_user(user: schemas.UserCreate, current_user: models.User = Depends(ge
     return crud.create_user(db=db, user=user, organization_id=current_user.organization_id, role=user.role)
 
 @app.post("/register/", response_model=schemas.User)
-def register_user(user: schemas.UserRegister, db: Session = Depends(get_db)):
+async def register_user(user: schemas.UserRegister, db: Session = Depends(get_db)):
     try:
+        print(f"Received registration request: {user.dict()}")
         return crud.register_user(db=db, user=user)
     except ValueError as e:
+        print(f"Registration ValueError: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Registration Exception: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")  # Add full traceback
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
