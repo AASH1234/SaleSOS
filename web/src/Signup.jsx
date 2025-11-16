@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './Login.css' // reuse the auth styles
+import { register } from './api'
 
 // Icons as SVG components for better quality
 const UserIcon = () => (
@@ -133,13 +134,31 @@ function Signup({ onNavigate }) {
     setError('')
     setIsLoading(true)
 
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      // eslint-disable-next-line no-alert
-      alert(`Account created (demo): ${email} - ${organization}`)
-      onNavigate && onNavigate('login')
+      const payload = {
+        name,
+        email,
+        organization,
+        password
+      };
+      console.log('Submitting registration with:', payload);
+      
+      const result = await register(payload)
+
+      if (result.success) {
+        // eslint-disable-next-line no-alert
+        alert(`Account created successfully for ${email}`)
+        onNavigate && onNavigate('login')
+      } else {
+        console.error('Registration failed:', result);
+        // Display detailed error if available
+        if (result.validationErrors) {
+          console.error('Validation errors:', result.validationErrors);
+        }
+        setError(result.message || 'Registration failed. Please try again.')
+      }
     } catch (err) {
+      console.error('Unexpected error:', err);
       setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
@@ -346,33 +365,6 @@ function Signup({ onNavigate }) {
           </div>
 
           <div className="input-group">
-            <label htmlFor="organization">Your organization</label>
-            <div className={`input-wrapper ${organizationValid === true ? 'valid' : organizationValid === false ? 'invalid' : ''}`}>
-              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-              <input
-                id="organization"
-                type="text"
-                value={organization}
-                onChange={handleOrganizationChange}
-                placeholder="Your organization name"
-                autoComplete="organization"
-              />
-              {organizationValid !== null && (
-                <svg className="input-status" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  {organizationValid ? (
-                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                  ) : (
-                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                  )}
-                </svg>
-              )}
-            </div>
-          </div>
-
-          <div className="input-group">
             <label htmlFor="password">Password</label>
             <div className={`input-wrapper ${passwordValid === true ? 'valid' : passwordValid === false ? 'invalid' : ''}`}>
               <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -417,6 +409,33 @@ function Signup({ onNavigate }) {
               {confirmValid !== null && (
                 <svg className="input-status" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   {confirmValid ? (
+                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  ) : (
+                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                  )}
+                </svg>
+              )}
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="organization">Your organization</label>
+            <div className={`input-wrapper ${organizationValid === true ? 'valid' : organizationValid === false ? 'invalid' : ''}`}>
+              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              <input
+                id="organization"
+                type="text"
+                value={organization}
+                onChange={handleOrganizationChange}
+                placeholder="Your organization name"
+                autoComplete="organization"
+              />
+              {organizationValid !== null && (
+                <svg className="input-status" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  {organizationValid ? (
                     <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
                   ) : (
                     <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />

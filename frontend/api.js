@@ -30,8 +30,8 @@ export async function register(email, password, fullName, organizationCode) {
         body: JSON.stringify({
             email: email,
             password: password,
-            full_name: fullName,
-            organization_code: organizationCode,
+            name: fullName,
+            organization: organizationCode,
         }),
     });
 

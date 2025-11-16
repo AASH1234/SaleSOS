@@ -75,17 +75,31 @@ export const getToken = async (credentials) => {
 
 // Registration API method
 export const register = async (userData) => {
+  console.log('Registering user with data:', userData);
   try {
+    // Log the exact payload being sent
+    console.log('Payload:', JSON.stringify(userData));
+    
     const response = await apiClient.post('/register/', userData);
+    console.log('Registration response:', response);
     
     return {
       success: true,
       user: response,
     };
   } catch (error) {
+    console.error('Registration error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+    });
+    
     return {
       success: false,
-      message: error.response?.data?.detail || 'Registration failed',
+      message: error.response?.data?.detail || error.response?.data?.message || 'Registration failed',
+      errors: error.response?.data?.detail,
+      validationErrors: error.response?.data, // Include full response for debugging
     };
   }
 };

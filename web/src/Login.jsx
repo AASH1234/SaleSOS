@@ -77,26 +77,11 @@ function Login({ onNavigate }) {
     setError('')
     setIsLoading(true)
 
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      // eslint-disable-next-line no-alert
-      alert(`Logged in (demo): ${email}`)
-    } catch (err) {
-      setError('An error occurred. Please try again.')
-    } finally {
-      setIsLoading(false)
-      await CallLoginAPI()
-    }
-  }
-
-  async function CallLoginAPI() {
     try {
       const response = await getToken({ email, password })
       if (response.success) {
-        // Handle successful login
         console.log('Token:', response.token)
-        // Navigate to dashboard or home page
+        // Navigate to dashboard on successful login
         if (onNavigate) {
           onNavigate('dashboard')
         }
@@ -106,6 +91,8 @@ function Login({ onNavigate }) {
     } catch (err) {
       setError('An error occurred while logging in')
       console.error(err)
+    } finally {
+      setIsLoading(false)
     }
   }
 

@@ -29,7 +29,7 @@ class UserRegister(BaseModel):
     name: str
     email: str
     password: str
-    organization_name: str
+    organization: str
 
 class User(UserBase):
     id: int
