@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum, DateTime
 from sqlalchemy.orm import relationship
 import enum
-import datetime
+from datetime import datetime
 
 from database import Base
 
@@ -61,3 +61,13 @@ class RefreshToken(Base):
     expires_at = Column(DateTime, nullable=False)
 
     user = relationship("User", back_populates="refresh_tokens")
+
+class OTP(Base):
+    __tablename__ = "otps"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, index=True, nullable=False)
+    otp_code = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+    is_used = Column(Boolean, default=False)

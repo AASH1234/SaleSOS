@@ -104,4 +104,31 @@ export const register = async (userData) => {
   }
 };
 
+export const verifyOtp = async (email, otp) => {
+  try {
+    const response = await apiClient.post('/register/verify-otp/', {
+      email: email,
+      otp: otp,
+    });
+
+    return {
+      success: true,
+      data: response,
+      message: 'Account verified successfully',
+    };
+  } catch (error) {
+    console.error('Verify OTP error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+    });
+    return {
+      success: false,
+      message: error.response?.data?.detail || error.response?.data?.message || 'OTP verification failed',
+      errors: error.response?.data,
+    };
+  }
+};
+
 export default apiClient;

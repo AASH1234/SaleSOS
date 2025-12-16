@@ -6,8 +6,12 @@ from typing import List
 from jose import JWTError, jwt
 from datetime import timedelta, datetime
 
-import auth, crud, models, schemas
+import auth, crud, models, schemas, email_utils
 from database import SessionLocal, engine
+import random
+
+# Add email utility import (you'll need to create this or use a service)
+# from email_utils import send_otp_email  # Uncomment when you implement email service
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -30,6 +34,11 @@ def get_db():
         yield db
     finally:
         db.close()
+def generate_otp():
+    return str(random.randint(100000, 999999))  # 6-digit OTP
+
+# Store pending registrations in memory (use Redis or database in production)
+pending_registrations = {}
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -60,18 +69,13 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
+    # Create access token and refresh token
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token, refresh_expires_at = auth.create_refresh_token(data={"sub": user.email})
     
-    # Store access token in database
-    access_token_expires_at = datetime.utcnow() + access_token_expires
-    crud.create_access_token(db, user_id=user.id, token=access_token, expires_at=access_token_expires_at)
-    
-    refresh_token, expires_at = auth.create_refresh_token(data={"sub": user.email})
-    crud.create_refresh_token(db, user_id=user.id, token=refresh_token, expires_at=expires_at)
-    
-    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+    # Save refresh token to the database
+    crud.save_access_token(db, user_id=user.id, token=access_token, expires_at=refresh_expires_at)
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": access_token}
 
 @app.post("/token/refresh", response_model=schemas.RefreshTokenResponse)
 async def refresh_access_token(request: schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
@@ -100,10 +104,6 @@ async def refresh_access_token(request: schemas.RefreshTokenRequest, db: Session
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    
-    # Store new access token in database
-    access_token_expires_at = datetime.utcnow() + access_token_expires
-    crud.create_access_token(db, user_id=user.id, token=access_token, expires_at=access_token_expires_at)
 
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -171,17 +171,84 @@ def create_user(user: schemas.UserCreate, current_user: models.User = Depends(ge
     
     return crud.create_user(db=db, user=user, organization_id=current_user.organization_id, role=user.role)
 
-@app.post("/register/", response_model=schemas.User)
+@app.post("/register/")
 async def register_user(user: schemas.UserRegister, db: Session = Depends(get_db)):
     try:
         print(f"Received registration request: {user.dict()}")
-        return crud.register_user(db=db, user=user)
+        
+        # Check if email already exists
+        db_user = crud.get_user_by_email(db, email=user.email)
+        if db_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Generate and send OTP
+        otp = generate_otp()
+        crud.save_otp(user.email, otp, db)
+        email_utils.send_otp_email(user.email, otp)
+        
+        # Store pending registration data
+        pending_registrations[user.email] = user.dict()
+        
+        print(f"OTP for {user.email}: {otp}")  # Remove in production!
+        return {"message": "OTP sent to your email. Please verify to complete registration", "email": user.email}
+    except HTTPException:
+        raise
     except ValueError as e:
         print(f"Registration ValueError: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         print(f"Registration Exception: {str(e)}")
         import traceback
-        print(f"Traceback: {traceback.format_exc()}")  # Add full traceback
+        print(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/register/verify-otp/", response_model=schemas.User)
+async def verify_otp_and_register(email: str, otp: str, db: Session = Depends(get_db)):
+    try:
+        # Verify OTP
+        stored_otp = crud.get_otp(email, db)
+        if not stored_otp or stored_otp != otp:
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        
+        # Check if pending registration exists
+        if email not in pending_registrations:
+            raise HTTPException(status_code=400, detail="No pending registration found for this email")
+        
+        # Get pending registration data
+        user_data = pending_registrations[email]
+        user = schemas.UserRegister(**user_data)
+        
+        # Create the user
+        new_user = crud.register_user(db=db, user=user)
+        
+        # Clean up
+        del pending_registrations[email]
+        crud.delete_otp(email, db)  # Assuming you have this function in crud
+        
+        return new_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Verification Exception: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/send-otp/")
+async def send_otp(email: str, db: Session = Depends(get_db)):
+    otp = generate_otp()
+    # Save OTP to the database or cache with expiration
+    crud.save_otp(email, otp, db)
+    email_utils.send_otp_email(email, otp)  # Uncomment when email service is ready
+    # For development, you can log the OTP or return it
+    print(f"OTP for {email}: {otp}")  # Remove in production!
+    return {"message": "OTP sent successfully"}
+
+@app.post("/verify-otp/")
+async def verify_otp(email: str, otp: str, db: Session = Depends(get_db)):
+    stored_otp = crud.get_otp(email, db)
+    if stored_otp == otp:
+        return {"message": "OTP verified successfully"}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
 

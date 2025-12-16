@@ -71,7 +71,7 @@ def register_user(db: Session, user: schemas.UserRegister):
     db.refresh(db_user)
     return db_user
 
-def create_refresh_token(db: Session, user_id: int, token: str, expires_at: datetime):
+def save_access_token(db: Session, user_id: int, token: str, expires_at: datetime):
     db_refresh_token = models.RefreshToken(
         user_id=user_id,
         token=token,
@@ -94,3 +94,50 @@ def expire_refresh_token(db: Session, token: str):
         db.commit()
         db.refresh(db_token)
     return db_token
+
+def save_otp(email: str, otp: str, db: Session, expiration_minutes: int = 10):
+    """Save OTP to database with expiration time"""
+    from datetime import datetime, timedelta
+    
+    # Delete any existing OTPs for this email
+    db.query(models.OTP).filter(models.OTP.email == email).delete()
+    
+    expires_at = datetime.utcnow() + timedelta(minutes=expiration_minutes)
+    db_otp = models.OTP(
+        email=email,
+        otp_code=otp,
+        expires_at=expires_at
+    )
+    db.add(db_otp)
+    db.commit()
+    db.refresh(db_otp)
+    return db_otp
+
+def get_otp(email: str, db: Session):
+    """Retrieve valid OTP for email"""
+    from datetime import datetime
+    
+    otp_record = db.query(models.OTP).filter(
+        models.OTP.email == email,
+        models.OTP.is_used == False,
+        models.OTP.expires_at > datetime.utcnow()
+    ).order_by(models.OTP.created_at.desc()).first()
+    
+    if otp_record:
+        # Mark as used
+        otp_record.is_used = True
+        db.commit()
+        return otp_record.otp_code
+    return None
+
+def delete_otp(email: str, db: Session):
+    """Delete OTP record for the given email"""
+    otp_record = db.query(models.OTP).filter(models.OTP.email == email).first()
+    if otp_record:
+        db.delete(otp_record)
+        db.commit()
+    return True
+
+def papaji():
+    """A simple function that returns 'Papaji! was here'"""
+    return "Papaji! was here"

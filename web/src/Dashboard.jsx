@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Dashboard.css';
 
 // Dummy data for charts
@@ -37,6 +36,21 @@ const companiesData = [
 function Dashboard() {
   const [chartType, setChartType] = useState('monthly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+
+  // Fetch user and token from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
+    
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, []);
 
   // revenue totals and goals
   const monthlyGoal = 300000;

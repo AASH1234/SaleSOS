@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './Login.css' // reuse the auth styles
-import { register } from './api'
+import { register, verifyOtp } from './api'
 
 // Icons as SVG components for better quality
 const UserIcon = () => (
@@ -39,6 +39,9 @@ function Signup({ onNavigate }) {
   const [organizationValid, setOrganizationValid] = useState(null)
   const [passwordValid, setPasswordValid] = useState(null)
   const [confirmValid, setConfirmValid] = useState(null)
+  const [otp, setOtp] = useState('')
+  const [showOtp, setShowOtp] = useState(false)
+  const [otpValid, setOtpValid] = useState(null)
 
   // Validate email
   const validateEmail = (email) => {
@@ -104,8 +107,54 @@ function Signup({ onNavigate }) {
     }
   }
 
+  // Handle OTP change with validation
+  const handleOtpChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+    setOtp(value)
+    if (value) {
+      setOtpValid(value.length === 6)
+    } else {
+      setOtpValid(null)
+    }
+  }
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault()
+    if (!otp || otp.length !== 6) {
+      setError('Please enter a valid 6-digit OTP')
+      return
+    }
+
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const result = await verifyOtp(email, otp)
+      
+      if (result.success) {
+        // eslint-disable-next-line no-alert
+        alert(`Account verified successfully for ${email}`)
+        onNavigate && onNavigate('login')
+      } else {
+        setError(result.message || 'Invalid OTP. Please try again.')
+      }
+    } catch (err) {
+      console.error('OTP verification error:', err)
+      setError('An error occurred. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // If OTP is showing, handle verification instead
+    if (showOtp) {
+      handleVerifyOTP(e)
+      return
+    }
+
     if (!name || !email || !organization || !password || !confirm) {
       setError('Please fill all fields')
       return
@@ -146,9 +195,9 @@ function Signup({ onNavigate }) {
       const result = await register(payload)
 
       if (result.success) {
-        // eslint-disable-next-line no-alert
-        alert(`Account created successfully for ${email}`)
-        onNavigate && onNavigate('login')
+        // Show OTP field instead of navigating
+        setShowOtp(true)
+        setError('') // Clear any previous errors
       } else {
         console.error('Registration failed:', result);
         // Display detailed error if available
@@ -445,9 +494,42 @@ function Signup({ onNavigate }) {
             </div>
           </div>
 
+          {showOtp && (
+            <div className="input-group">
+              <label htmlFor="otp">Verification Code</label>
+              <div className={`input-wrapper ${otpValid === true ? 'valid' : otpValid === false ? 'invalid' : ''}`}>
+                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                <input
+                  id="otp"
+                  type="text"
+                  value={otp}
+                  onChange={handleOtpChange}
+                  placeholder="Enter 6-digit OTP"
+                  maxLength="6"
+                  autoComplete="one-time-code"
+                />
+                {otpValid !== null && (
+                  <svg className="input-status" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    {otpValid ? (
+                      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    ) : (
+                      <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                    )}
+                  </svg>
+                )}
+              </div>
+              <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                A verification code has been sent to your email
+              </p>
+            </div>
+          )}
+
           <button type="submit" className={`btn ${isLoading ? 'loading' : ''}`} disabled={isLoading}>
             <span>
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? (showOtp ? 'Verifying...' : 'Creating account...') : (showOtp ? 'Verify' : 'Create account')}
             </span>
             {!isLoading && (
               <svg className="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">

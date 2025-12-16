@@ -80,7 +80,23 @@ function Login({ onNavigate }) {
     try {
       const response = await getToken({ email, password })
       if (response.success) {
-        console.log('Token:', response.token)
+        // Save token to localStorage
+        localStorage.setItem('token', response.token)
+        
+        // Optionally save user info if returned
+        if (response.user) {
+          localStorage.setItem('user', JSON.stringify(response.user))
+        }
+        
+        // Save email if remember me is checked
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email)
+        } else {
+          localStorage.removeItem('rememberedEmail')
+        }
+        
+        console.log('Token saved:', response.token)
+        
         // Navigate to dashboard on successful login
         if (onNavigate) {
           onNavigate('dashboard')
@@ -297,7 +313,12 @@ function Login({ onNavigate }) {
 
           <div className="form-footer">
             <div className="remember-me">
-              <input type="checkbox" id="remember" />
+              <input 
+                type="checkbox" 
+                id="remember" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
               <label htmlFor="remember">Remember me</label>
             </div>
             <button
